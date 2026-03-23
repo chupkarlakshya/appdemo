@@ -4,13 +4,23 @@ import streamlit as st
 st.title("📚 Book Recommendation System")
 
 # =========================
+# GOOGLE DRIVE FILE IDS
+# =========================
+
+BOOKS_ID = "1rEE9L2f5x0lovm9Xyd2_QgnJe4HuBLe-"
+RATINGS_ID = "13bCAwIpp61k41IwjAGV00MVEnXzgqNJx"
+
+books_url = f"https://drive.google.com/uc?id={BOOKS_ID}"
+ratings_url = f"https://drive.google.com/uc?id={RATINGS_ID}"
+
+# =========================
 # LOAD DATA
 # =========================
 
 @st.cache_data
 def load_data():
-    books = pd.read_csv('BX-Books.csv', sep=';', encoding='latin-1', on_bad_lines='skip')
-    ratings = pd.read_csv('BX-Book-Ratings.csv', sep=';', encoding='latin-1', on_bad_lines='skip')
+    books = pd.read_csv(books_url, sep=';', encoding='latin-1', on_bad_lines='skip')
+    ratings = pd.read_csv(ratings_url, sep=';', encoding='latin-1', on_bad_lines='skip')
 
     books = books[['ISBN', 'Book-Title']]
     books['Book-Title'] = books['Book-Title'].str.lower().str.strip()
