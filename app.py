@@ -35,7 +35,7 @@ def load_data():
 
     # filter books (IMPORTANT: reduce size)
     book_counts = data['Book-Title'].value_counts()
-    popular_books = book_counts[book_counts >= 50].index
+    popular_books = book_counts[book_counts >= 75].index
     data = data[data['Book-Title'].isin(popular_books)]
 
     # pivot
