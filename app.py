@@ -1,17 +1,14 @@
 import pandas as pd
 import streamlit as st
 
-st.title("📚 Book Recommendation System")
+st.title(" Book Recommendation System")
 
 # =========================
 # GOOGLE DRIVE FILE IDS
 # =========================
 
-BOOKS_ID = "1rEE9L2f5x0lovm9Xyd2_QgnJe4HuBLe-"
-RATINGS_ID = "13bCAwIpp61k41IwjAGV00MVEnXzgqNJx"
-
-books_url = f"https://drive.google.com/uc?export=download&id={BOOKS_ID}"
-ratings_url = f"https://drive.google.com/uc?export=download&id={RATINGS_ID}"
+books_url = "https://drive.google.com/uc?export=download&id=1rEE9L2f5x0lovm9Xyd2_QgnJe4HuBLe-"
+ratings_url = "https://drive.google.com/uc?export=download&id=13bCAwIpp61k41IwjAGV00MVEnXzgqNJx"
 
 # =========================
 # LOAD DATA (CACHED)
@@ -79,11 +76,19 @@ def recommend(book):
 selected_book = st.selectbox("Select a Book", book_list)
 
 if st.button("Recommend"):
+
+    # call the function to get recommendations
     results = recommend(selected_book)
 
-    if not results:
+    # check if any books were returned
+    if len(results) == 0:
         st.error("Book not found")
+
     else:
         st.subheader("📚 Recommended Books:")
-        for i, b in enumerate(results, 1):
-            st.write(f"{i}. {b.title()}")
+
+        # print each book one by one
+        count = 1
+        for book in results:
+            st.write(str(count) + ". " + book.title())
+            count = count + 1
