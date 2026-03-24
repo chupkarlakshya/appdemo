@@ -85,7 +85,7 @@ if st.button("Recommend"):
         st.error("Book not found")
 
     else:
-        st.subheader("📚 Recommended Books:")
+        st.subheader("Recommended Books:")
 
         # print each book one by one
         count = 1
