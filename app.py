@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 
 # ================================
@@ -6,7 +7,7 @@ import streamlit as st
 # ================================
 
 # This sets the title that appears at the top of the web app
-st.title(" Book Recommendation System")
+st.title("📚 Book Recommendation System")
 
 # ================================
 # STEP 2: LINKS TO OUR DATA FILES
@@ -39,7 +40,7 @@ def load_data():
     books = books[['ISBN', 'Book-Title']]
 
     # Make all titles lowercase and remove extra spaces
-    # This prevents duplicates like "Harry Potter" and "harry potter" being treated as different books
+    # This prevents duplicates like "Harry Potter" and "harry potter" being treated differently
     books['Book-Title'] = books['Book-Title'].str.lower().str.strip()
 
     # --- Combine books and ratings into one table ---
@@ -52,23 +53,19 @@ def load_data():
     # --- Filter out users who haven't rated many books ---
     # Users who only rated 1-2 books don't give us much useful information
     # We only keep users who rated AT LEAST 10 books
-    user_counts = data['User-ID'].value_counts()       # count how many books each user rated
-    active_users = user_counts[user_counts >= 10].index  # get IDs of users with 10+ ratings
-    data = data[data['User-ID'].isin(active_users)]    # keep only rows from those users
+    user_counts = data['User-ID'].value_counts()
+    active_users = user_counts[user_counts >= 10].index
+    data = data[data['User-ID'].isin(active_users)]
 
     # --- Filter out books that aren't very popular ---
-    # A book rated by only 2 people doesn't help us find patterns
     # We only keep books rated by AT LEAST 100 different users
-    book_counts = data['Book-Title'].value_counts()         # count how many users rated each book
-    popular_books = book_counts[book_counts >= 100].index   # get titles with 100+ ratings
-    data = data[data['Book-Title'].isin(popular_books)]     # keep only those books
+    book_counts = data['Book-Title'].value_counts()
+    popular_books = book_counts[book_counts >= 100].index
+    data = data[data['Book-Title'].isin(popular_books)]
 
     # --- Build the ratings matrix (pivot table) ---
-    # This creates a big table where:
-    #   - Each ROW is a user
-    #   - Each COLUMN is a book
-    #   - Each CELL is the rating that user gave that book
-    # If a user didn't rate a book, we fill the empty cell with 0
+    # Rows = users, Columns = books, Cells = rating given
+    # Empty cells (user didn't rate that book) are filled with 0
     pivot = data.pivot_table(index='User-ID', columns='Book-Title', values='Book-Rating')
     pivot = pivot.fillna(0)
 
@@ -79,11 +76,10 @@ def load_data():
 # STEP 4: LOAD THE DATA
 # ================================
 
-# Show a loading message while the data is being fetched
-with st.spinner("Loading data... please wait "):
+with st.spinner("Loading data... please wait ⏳"):
     pivot = load_data()
 
-# Get the list of all book titles (these are the column names of our table)
+# Get the list of all book titles (the column names of our table)
 book_list = list(pivot.columns)
 
 
@@ -97,27 +93,47 @@ def recommend(book):
 
     # Check if this book exists in our dataset
     if book not in pivot.columns:
-        return []  # Return an empty list if the book wasn't found
+        return []
 
-    # Get the column of ratings for the selected book
-    # This is a list of how every user rated this book
-    selected_book_ratings = pivot[book]
+    # Get the ratings column for the selected book as a numpy array
+    # A numpy array is just a list of numbers that's fast to do maths on
+    selected_book_ratings = pivot[book].values
 
-    # Compare this book's ratings against every other book's ratings
-    # corrwith() calculates the "correlation" - basically asking:
-    # "Do the same users who liked THIS book also tend to like OTHER books?"
-    # The result is a score between -1 and 1 for each book
-    # A score close to 1 = very similar taste, close to 0 = unrelated
-    similarity_scores = pivot.corrwith(selected_book_ratings)
+    # --- Calculate Euclidean Distance ---
+    # For each other book, we measure how "far apart" its ratings are
+    # from the selected book's ratings.
+    #
+    # The formula is: distance = sqrt( sum of (a - b)^2 )
+    # where a = selected book's ratings, b = another book's ratings
+    #
+    # A small distance means users rated both books very similarly -> good recommendation
+    # A large distance means users rated them differently -> not a good match
 
-    # Sort the books from most similar to least similar
-    similarity_scores = similarity_scores.sort_values(ascending=False)
+    distances = {}
 
-    # Remove the selected book itself from the results (it would always be #1)
-    # Then return the top 5 most similar books
-    top_5 = similarity_scores.drop(book).head(5)
+    for other_book in pivot.columns:
+        # Skip comparing the book to itself
+        if other_book == book:
+            continue
 
-    return top_5.index.tolist()  # .index gives us the book titles, .tolist() converts to a list
+        # Get the other book's ratings
+        other_book_ratings = pivot[other_book].values
+
+        # Calculate the Euclidean distance using numpy:
+        # np.subtract gives us (a - b) for each user
+        # ** 2 squares each difference
+        # np.sum adds them all up
+        # np.sqrt takes the square root
+        distance = np.sqrt(np.sum((selected_book_ratings - other_book_ratings) ** 2))
+
+        # Store the result
+        distances[other_book] = distance
+
+    # Sort by distance - smallest distance first (most similar books at the top)
+    sorted_books = sorted(distances, key=lambda b: distances[b])
+
+    # Return just the top 5 most similar book titles
+    return sorted_books[:5]
 
 
 # ================================
@@ -125,24 +141,18 @@ def recommend(book):
 # ================================
 
 # Show a dropdown menu with all available books
-selected_book = st.selectbox("Select a Book Which you like", book_list)
+selected_book = st.selectbox("Select a Book", book_list)
 
-# Show a button — when clicked, it runs the code inside the if block
+# When the button is clicked, run the recommendation
 if st.button("Recommend"):
 
-    # Call our recommend function with the chosen book
     results = recommend(selected_book)
 
-    # If no books were returned, show an error message
     if len(results) == 0:
         st.error("Book not found in our dataset.")
-
-    # Otherwise, display the recommended books
     else:
         st.subheader(" Recommended Books:")
 
-        # Loop through the results and print each one
-        # We use enumerate to get a count (1, 2, 3...) alongside each book title
+        # Loop through results and display each one
         for count, book in enumerate(results, start=1):
-            # .title() capitalizes the first letter of each word
             st.write(str(count) + ". " + book.title())
