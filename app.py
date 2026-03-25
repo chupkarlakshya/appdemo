@@ -7,7 +7,7 @@ import streamlit as st
 # ================================
 
 # This sets the title that appears at the top of the web app
-st.title("📚 Book Recommendation System")
+st.title(" Book Recommendation System")
 
 # ================================
 # STEP 2: LINKS TO OUR DATA FILES
@@ -76,7 +76,7 @@ def load_data():
 # STEP 4: LOAD THE DATA
 # ================================
 
-with st.spinner("Loading data... please wait ⏳"):
+with st.spinner("Loading data... please wait "):
     pivot = load_data()
 
 # Get the list of all book titles (the column names of our table)
