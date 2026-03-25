@@ -125,7 +125,7 @@ def recommend(book):
 # ================================
 
 # Show a dropdown menu with all available books
-selected_book = st.selectbox("Select a Book", book_list)
+selected_book = st.selectbox("Select a Book Which you like", book_list)
 
 # Show a button — when clicked, it runs the code inside the if block
 if st.button("Recommend"):
