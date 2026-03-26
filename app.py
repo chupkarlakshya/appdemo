@@ -9,9 +9,7 @@ import streamlit as st
 # This sets the title that appears at the top of the web app
 st.title(" Book Recommendation System")
 
-# ================================
-# STEP 2: LINKS TO OUR DATA FILES
-# ================================
+
 
 # These are download links to two files stored on Google Drive:
 # - books_url: contains book info (ISBN number and book title)
